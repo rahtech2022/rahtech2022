@@ -1,0 +1,83 @@
+from matplotlib import pyplot as plt
+import socket
+import numpy as np
+import struct
+import time
+
+HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
+#PORT = 31000  # Port to listen on (non-privileged ports are > 1023)
+TESTPORT = 32000  # Port to listen on (non-privileged ports are > 1023)
+FRAME_PERIOD=0.05
+
+#file1 = open('1.txt', 'r')
+file1 = open('20220405-174601.txt', 'r')
+#file1 = open('MIMO_ON_Kamarbandi.txt', 'r')
+Lines = file1.readlines()
+
+count = 0
+TargetCounter=0
+Y_List=[]
+X_List=[]
+Range_List=[]
+Velocity_List=[]
+CalculateVelociy_List=[]
+PrevFrameNumber=0
+numberofobject=0
+
+#mysocket= socket.socket(socket.AF_INET, socket.SOCK_STREAM) #TCP
+#mysocket.bind((HOST, TESTPORT)) #TCP
+#mysocket.listen() #TCP
+#conn, addr = mysocket.accept()#TCP
+mysocket= socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  ###UDP
+#while 1:
+#    conn.sendall(bytes("1,2,3,4\n",'ascii'))
+#    time.sleep(0.5)
+
+mystring=''
+#while 1:
+for line in Lines:
+    count += 1
+    #print("Line{}: {}".format(count, line.strip())) #Debugging
+
+    splitWords = line.split(" ")
+    #print(splitWords) #Debugging
+    if "Frame" in splitWords[0]:
+        FrameNumber=float( splitWords[2].replace("is:\t","") )
+        if numberofobject !=0:
+            Frame = [1000] + X_List + [2000] + Y_List + [3000] + Velocity_List
+            dataPackString = '<' + str(numberofobject * 3 + 3) + 'f'
+            data = struct.pack(dataPackString, *Frame)
+            mysocket.sendto(data, (HOST, TESTPORT)) ###UDP
+#            conn.sendall(data)   ###TCP
+
+        numberofobject=0
+        Y_List=[]
+        X_List=[]
+        Velocity_List=[]
+        time.sleep(FRAME_PERIOD)
+
+    if "\n" not in splitWords[0]:
+        if "Frame" not in splitWords[0]:
+            if "Y" not in splitWords[0]:
+                if "Target" not in splitWords[0]:
+                    if "Time" not in splitWords[0]:
+                        TargetY = splitWords[0].replace(",", "")
+                        TargetY = float(TargetY.replace("(", ""))
+                        TargetX = float(splitWords[1].replace(",", ""))
+                        TargetVelocity = float(splitWords[2].replace(",", ""))
+                        TargetRange = splitWords[3].replace(")", "")
+                        TargetRange = float(TargetRange.replace("\n", ""))
+
+                        Y_List.append(TargetY)
+                        X_List.append(TargetX)
+                        Velocity_List.append(TargetVelocity)
+                        numberofobject +=1
+
+
+                                
+
+
+
+
+
+
